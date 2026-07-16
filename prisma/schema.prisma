@@ -1,0 +1,33 @@
+datasource db {
+  provider = "postgresql" // Sử dụng PostgreSQL làm cơ sở dữ liệu
+  // url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Định nghĩa bảng User
+enum Role {
+  STAFF
+  ADMIN
+}
+model User {
+  id        Int      @id @default(autoincrement()) // Khóa chính, tự tăng
+  email     String   @unique                       // Trực quan, không trùng lặp
+  name      String?
+  hashed_password String?                            // Dấu ? nghĩa là cột này cho phép NULL
+  role      Role   @default(STAFF)               // Vai trò mặc định là STAFF
+  createdAt DateTime @default(now())               // Tự động lấy thời gian hiện tại
+  updatedAt DateTime @updatedAt                     // Tự động cập nhật thời gian khi bản ghi được sửa đổi                            // Quan hệ: Một User có một mảng các Posts
+  sessions  Sessions[] // Quan hệ: Một User có nhiều Sessions
+}
+model Sessions {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  refresh_token     String   @unique
+  createdAt DateTime @default(now())
+  expiredAt DateTime @default(dbgenerated("(now() + interval '1 hour')")) // Thời gian hết hạn mặc định là 1 giờ sau khi tạo
+
+  user      User     @relation(fields: [userId], references: [id])
+}
