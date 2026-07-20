@@ -16,7 +16,7 @@ model User {
   id        Int      @id @default(autoincrement()) // Khóa chính, tự tăng
   email     String   @unique                       // Trực quan, không trùng lặp
   name      String?
-  hashed_password String?                            // Dấu ? nghĩa là cột này cho phép NULL
+  hashed_password String                         // Dấu ? nghĩa là cột này cho phép NULL
   role      Role   @default(STAFF)               // Vai trò mặc định là STAFF
   createdAt DateTime @default(now())               // Tự động lấy thời gian hiện tại
   updatedAt DateTime @updatedAt                     // Tự động cập nhật thời gian khi bản ghi được sửa đổi                            // Quan hệ: Một User có một mảng các Posts
