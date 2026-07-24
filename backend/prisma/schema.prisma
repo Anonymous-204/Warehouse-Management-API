@@ -33,11 +33,13 @@ model User {
   email          String    @unique
   name           String?
   hashedPassword String    @map("hashed_password")
+  warehouseId     Int?      @map("warehouse_id")
   role           Role      @default(STAFF)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relationships
+  warehouse        Warehouse? @relation(fields: [warehouseId], references: [id])
   sessions          Session[]
   notifications     Notification[]
   stockTransactions StockTransaction[]
@@ -136,7 +138,7 @@ model Warehouse {
   description String?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-
+  users       User[]
   inventories  Inventory[]
   transactions StockTransaction[]
 

@@ -37,6 +37,7 @@ export class UsersService {
                 name: true,
                 email: true,
                 role: true,
+                warehouseId: true,
                 hashedPassword: true,
             }
         });
