@@ -42,42 +42,49 @@ export class CreateProductDto {
   price!: number;
 }
 // xuất và nhập kho(STAFF)
-export class UpdateInventoryDto {
+export class IOInventoryDto {
+  @IsInt()
   @IsNotEmpty()
-  warehouseId!: number;
-
+  warehouseId!: number
+  
+  @IsInt()
   @IsNotEmpty()
-  productId!: number;
+  productId!: number
 
   @IsInt()
   @IsNotEmpty()
-  quantityChange!: number; // Có thể nhận âm (-) hoặc dương (+) từ Frontend
+  quantity!: number; // Có thể nhận âm (-) hoặc dương (+) từ Frontend
 
   @IsString()
   @IsOptional()
   note?: string; 
-
-  @IsInt()
-  @IsNotEmpty()
-  userId!: number; // Truyền userId người thực hiện
 }
 // Điều chỉnh kho(MANAGER)
-export class adjustInventoryDto {
-  @IsNotEmpty()
-  warehouseId!: number;
-
-  @IsNotEmpty()
-  productId!: number;
+export class AdjustInventoryDto {
 
   @IsInt()
   @IsNotEmpty()
+  @Min(0,{message:"Số lượng tồn kho không âm"})
   quantityUpdate!: number; // chỉ có thể dương (+) từ Frontend
 
   @IsString()
   @IsOptional()
   note?: string; 
+}
+export class TransferInventoryDto {
+  @IsInt()
+  @IsNotEmpty()
+  toWarehouseId!: number;
 
   @IsInt()
   @IsNotEmpty()
-  userId!: number; // Truyền userId người thực hiện
+  productId!: number;
+
+  @IsInt()
+  @Min(1, { message: 'Số lượng điều chuyển phải lớn hơn 0' })
+  quantity!: number;
+
+  @IsString()
+  @IsOptional()
+  note?: string;
 }

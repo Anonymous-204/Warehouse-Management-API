@@ -29,26 +29,6 @@ interface InventoryItem {
   };
 }
 
-// 3. Khai báo kiểu dữ liệu cho Lịch sử giao dịch (StockTransaction)
-interface TransactionHistory {
-  id: number;
-  quantity: number;
-  type: 'IN' | 'OUT' | 'ADJUST' | 'TRANSFER';
-  note?: string;
-  createdAt: string;
-  product: {
-    id: number;
-    sku: string;
-    name: string;
-    price: number;
-  };
-  warehouse: {
-    id: number;
-    name: string;
-    address: string;
-  };
-}
-
 export default function HomePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,11 +41,6 @@ export default function HomePage() {
 
   // State quản lý Modal khi bấm vào dòng sản phẩm
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-
-  // 🆕 State quản lý Modal & dữ liệu Lịch sử giao dịch cá nhân
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [historyList, setHistoryList] = useState<TransactionHistory[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const navigate = useNavigate();
 
@@ -110,22 +85,6 @@ export default function HomePage() {
     }
   };
 
-  // 🆕 Hàm gọi API lấy Lịch sử giao dịch cá nhân
-  const fetchMyHistory = async () => {
-    setLoadingHistory(true);
-    setShowHistoryModal(true);
-    try {
-      const res = await api.get('/products/history/me');
-      // Tùy theo response từ backend (res.data.data hoặc res.data)
-      setHistoryList(res.data.data || res.data);
-    } catch (err) {
-      console.error(err);
-      alert('Không thể lấy lịch sử hoạt động cá nhân. Vui lòng thử lại!');
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
   // Hàm Đăng xuất
   const handleLogout = async () => {
     try {
@@ -149,6 +108,7 @@ export default function HomePage() {
       return ['MANAGER', 'ADMIN'].includes(role);
     }
     if (action === 'TRANSFER') {
+      // Phân quyền cho phép chuyển kho (ở đây giữ theo logic cũ của bạn: ADMIN)
       return role === 'ADMIN';
     }
     return false;
@@ -201,9 +161,9 @@ export default function HomePage() {
           {loadingProducts ? '⏳ Đang tải dữ liệu...' : '📦 Xem toàn bộ sản phẩm trong kho'}
         </button>
 
-        {/* 🆕 NÚT BẤM XEM LỊCH SỬ HOẠT ĐỘNG CÁ NHÂN */}
+        {/* NÚT CHUYỂN HƯỚNG TỚI TRANG LỊCH SỬ CÁ NHÂN */}
         <button
-          onClick={fetchMyHistory}
+          onClick={() => navigate('/history/me')}
           style={{
             padding: '12px 20px',
             backgroundColor: '#0d6efd',
@@ -218,7 +178,7 @@ export default function HomePage() {
             gap: '8px'
           }}
         >
-          📜 Lịch sử hoạt động cá nhân
+          📜 Lịch sử hoạt động
         </button>
       </div>
 
@@ -330,7 +290,14 @@ export default function HomePage() {
               {/* Option 2: Điều chỉnh kho (MANAGER, ADMIN) */}
               <button
                 disabled={!isAllowed('ADJUST')}
-                onClick={() => alert(`Chuyển hướng đến màn hình Điều chỉnh kho cho SKU: ${selectedItem.product.sku}`)}
+                onClick={() => {
+                  navigate('/inventory/adjust', {
+                    state: {
+                      warehouseId: user?.warehouseId,
+                      item: selectedItem
+                    }
+                  });
+                }}
                 style={getButtonStyle(isAllowed('ADJUST'), '#fd7e14')}
                 title={!isAllowed('ADJUST') ? 'Yêu cầu quyền MANAGER hoặc ADMIN' : ''}
               >
@@ -340,7 +307,14 @@ export default function HomePage() {
               {/* Option 3: Điều chuyển hàng (Chỉ ADMIN) */}
               <button
                 disabled={!isAllowed('TRANSFER')}
-                onClick={() => alert(`Chuyển hướng đến màn hình Điều chuyển kho cho SKU: ${selectedItem.product.sku}`)}
+                onClick={() => {
+                  navigate('/inventory/transfer', {
+                    state: {
+                      fromWarehouseId: user?.warehouseId,
+                      item: selectedItem
+                    }
+                  });
+                }}
                 style={getButtonStyle(isAllowed('TRANSFER'), '#6f42c1')}
                 title={!isAllowed('TRANSFER') ? 'Chỉ ADMIN mới có quyền điều chuyển giữa các kho' : ''}
               >
@@ -351,86 +325,6 @@ export default function HomePage() {
             <div style={{ marginTop: '20px', textAlign: 'right' }}>
               <button
                 onClick={() => setSelectedItem(null)}
-                style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* -------------------- 🆕 MODAL XEM BẢNG LỊCH SỬ GIAO DỊCH CÁ NHÂN -------------------- */}
-      {showHistoryModal && (
-        <div style={overlayStyle}>
-          <div style={{ ...modalStyle, maxWidth: '850px', maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #dee2e6', paddingBottom: '10px' }}>
-              <h3 style={{ margin: 0 }}>📜 Lịch Sử Giao Dịch Cá Nhân</h3>
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6c757d' }}
-              >
-                ✖
-              </button>
-            </div>
-
-            <div style={{ marginTop: '15px' }}>
-              {loadingHistory ? (
-                <div style={{ textAlign: 'center', padding: '30px' }}>⏳ Đang tải lịch sử giao dịch...</div>
-              ) : historyList.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#6c757d', padding: '20px' }}>
-                  Bạn chưa thực hiện giao dịch nhập/xuất kho nào.
-                </p>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#212529', color: '#fff' }}>
-                        <th style={thStyle}>Thời gian</th>
-                        <th style={thStyle}>Loại</th>
-                        <th style={thStyle}>Sản phẩm</th>
-                        <th style={thStyle}>SKU</th>
-                        <th style={thStyle}>Số lượng</th>
-                        <th style={thStyle}>Kho</th>
-                        <th style={thStyle}>Ghi chú</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {historyList.map((item) => (
-                        <tr key={item.id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                          <td style={tdStyle}>
-                            {new Date(item.createdAt).toLocaleString('vi-VN')}
-                          </td>
-                          <td style={tdStyle}>
-                            <span style={{
-                              padding: '3px 8px',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              backgroundColor: item.type === 'IN' ? '#d1e7dd' : '#f8d7da',
-                              color: item.type === 'IN' ? '#0f5132' : '#842029'
-                            }}>
-                              {item.type === 'IN' ? '📥 Nhập' : item.type === 'OUT' ? '📤 Xuất' : item.type}
-                            </span>
-                          </td>
-                          <td style={tdStyle}><strong>{item.product?.name}</strong></td>
-                          <td style={tdStyle}><code>{item.product?.sku}</code></td>
-                          <td style={{ ...tdStyle, fontWeight: 'bold', color: item.type === 'IN' ? '#198754' : '#dc3545' }}>
-                            {item.type === 'IN' ? `+${item.quantity}` : `-${item.quantity}`}
-                          </td>
-                          <td style={tdStyle}>{item.warehouse?.name}</td>
-                          <td style={tdStyle}>{item.note || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div style={{ marginTop: '20px', textAlign: 'right' }}>
-              <button
-                onClick={() => setShowHistoryModal(false)}
                 style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
               >
                 Đóng

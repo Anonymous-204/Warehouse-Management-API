@@ -29,17 +29,17 @@ enum TransactionType {
 // ==========================================
 
 model User {
-  id             Int       @id @default(autoincrement())
-  email          String    @unique
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
   name           String?
-  hashedPassword String    @map("hashed_password")
-  warehouseId     Int?      @map("warehouse_id")
-  role           Role      @default(STAFF)
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  hashedPassword String   @map("hashed_password")
+  warehouseId    Int?     @map("warehouse_id")
+  role           Role     @default(STAFF)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  warehouse        Warehouse? @relation(fields: [warehouseId], references: [id])
+  warehouse         Warehouse?         @relation(fields: [warehouseId], references: [id])
   sessions          Session[]
   notifications     Notification[]
   stockTransactions StockTransaction[]
@@ -95,11 +95,11 @@ model Product {
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   description String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   products Product[]
 
@@ -107,11 +107,11 @@ model Category {
 }
 
 model Brand {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   description String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   products Product[]
 
@@ -119,12 +119,12 @@ model Brand {
 }
 
 model Supplier {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   image       String?
   description String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   inventories Inventory[]
 
@@ -132,15 +132,19 @@ model Supplier {
 }
 
 model Warehouse {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   address     String
   description String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
   users       User[]
-  inventories  Inventory[]
-  transactions StockTransaction[]
+  inventories Inventory[]
+
+  // 🔥 ĐÃ SỬA: Phân biệt 2 đường nối quan hệ tới StockTransaction
+  fromTransactions StockTransaction[] @relation("FromWarehouse")
+  toTransactions   StockTransaction[] @relation("ToWarehouse")
 
   @@map("warehouses")
 }
@@ -151,7 +155,7 @@ model Inventory {
   warehouseId Int      @map("warehouse_id")
   supplierId  Int      @map("supplier_id")
   quantity    Int      @default(0)
-  costPrice   Decimal  @default(0) @map("cost_price") @db.Decimal(12, 2) // Giá nhập
+  costPrice   Decimal  @default(0) @map("cost_price") @db.Decimal(12, 2)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -165,19 +169,24 @@ model Inventory {
 }
 
 model StockTransaction {
-  id          Int             @id @default(autoincrement())
-  userId      Int             @map("user_id") // BỔ SUNG: Ai là người thực hiện giao dịch này
-  productId   Int             @map("product_id")
-  warehouseId Int             @map("warehouse_id")
-  quantity    Int
-  type        TransactionType // Enum IN, OUT, ADJUST, TRANSFER
-  note        String?
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  id            Int             @id @default(autoincrement())
+  userId        Int             @map("user_id")
+  productId     Int             @map("product_id")
+  warehouseId   Int             @map("warehouse_id")
+  toWarehouseId Int?            @map("to_warehouse_id") // 🔥 ĐÃ SỬA: Cho phép optional (Int?) vì IN/OUT/ADJUST không cần kho đích
+  quantity      Int
+  stockVariance Int?            @map("stock_variance")
+  type          TransactionType
+  note          String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
 
-  user      User      @relation(fields: [userId], references: [id])
-  product   Product   @relation(fields: [productId], references: [id])
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  // 🔥 ĐÃ SỬA: Đặt tên relation rõ ràng "FromWarehouse" và "ToWarehouse"
+  warehouse   Warehouse  @relation("FromWarehouse", fields: [warehouseId], references: [id])
+  toWarehouse Warehouse? @relation("ToWarehouse", fields: [toWarehouseId], references: [id])
 
   @@map("stock_transactions")
 }

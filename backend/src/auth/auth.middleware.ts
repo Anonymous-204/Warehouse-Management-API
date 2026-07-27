@@ -1,14 +1,15 @@
 // src/auth/auth.middleware.ts
 import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 
 // Extend type Request để gán user sau khi giải mã
 export interface AuthenticatedRequest extends Request {
   user?: {
-    id: number | string;
+    id: number;
     email: string;
-    role: string;
+    role: Role;
     name?: string;
     warehouseId?: number | null;
   };

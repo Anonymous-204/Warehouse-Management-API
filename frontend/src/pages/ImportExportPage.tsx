@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
-// 1. Interface nhận dữ liệu từ HomePage (Đã bổ sung warehouseId và productId)
+// Interface nhận dữ liệu từ HomePage
 interface LocationState {
   warehouseId?: number;
   item?: {
@@ -10,7 +10,7 @@ interface LocationState {
     costPrice: number;
     supplier: { name: string };
     product: {
-      id: number; // 👈 Bắt buộc để truyền vào Param của API
+      id: number;
       sku: string;
       name: string;
       price: number;
@@ -34,7 +34,7 @@ export default function ImportExportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Nếu truy cập trực tiếp mà không chọn sản phẩm từ HomePage
+  // Màn hình báo lỗi nếu truy cập thiếu State
   if (!item || !warehouseId || !item.product?.id) {
     return (
       <div style={{ maxWidth: '600px', margin: '50px auto', padding: '20px', textAlign: 'center' }}>
@@ -67,15 +67,18 @@ export default function ImportExportPage() {
     setSubmitting(true);
     setMessage(null);
 
-    // Tính toán quantityChange cho Backend:
-    // NHẬP KHO (+) -> Giá trị dương (+quantity)
-    // XUẤT KHO (-) -> Giá trị âm (-quantity)
-    const quantityChange = type === 'IMPORT' ? Number(quantity) : -Number(quantity);
+    // 🎯 ĐỔI DẤU QUANTITY TẠI ĐÂY:
+    // - Nếu là IMPORT: giữ nguyên số dương (+quantity)
+    // - Nếu là EXPORT: đổi thành số âm (-quantity) để Backend xử lý
+    const payloadQuantity = type === 'IMPORT' ? Number(quantity) : -Math.abs(Number(quantity));
 
     try {
-      // 2. Gọi API NestJS chính xác: PUT /products/warehouse/:warehouseId/product/:productId/inventory
-      await api.put(`/products/warehouse/${warehouseId}/product/${item.product.id}/inventory`, {
-        quantityChange: quantityChange
+      // API NestJS: PUT /products/inventory/io
+      await api.put('/products/inventory/io', {
+        warehouseId: Number(warehouseId),
+        productId: Number(item.product.id),
+        quantity: payloadQuantity, // 👈 Đã đổi dấu âm/dương phù hợp với Service
+        note: note.trim() || undefined,
       });
 
       setMessage({
@@ -91,7 +94,7 @@ export default function ImportExportPage() {
     } catch (err: any) {
       console.error(err);
       const errDetail = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật tồn kho!';
-      setMessage({ type: 'error', text: errDetail });
+      setMessage({ type: 'error', text: Array.isArray(errDetail) ? errDetail.join(', ') : errDetail });
     } finally {
       setSubmitting(false);
     }
@@ -180,7 +183,7 @@ export default function ImportExportPage() {
           />
         </div>
 
-        {/* Ghi chú (Nếu backend có lưu lịch sử giao dịch sau này) */}
+        {/* Ghi chú */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>Ghi chú / Lý do:</label>
           <textarea
