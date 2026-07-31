@@ -1,8 +1,10 @@
 // src/users/users.controller.ts
-import { Controller, Get, Req, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Req,Query, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { Request } from 'express'; // 👈 Fix lỗi TS1272 (dùng Request từ express)
 import type { AuthenticatedRequest } from '../auth/auth.middleware'; // 👈 Dùng 'import type' cho interface
 import { UsersService } from './users.service';
+import { getEmployeesDto } from './users.dto';
+
 
 @Controller('users')
 export class UsersController {
@@ -27,5 +29,14 @@ export class UsersController {
     // Trả về thông tin ngoại trừ mật khẩu
     const { hashedPassword, ...result } = user;
     return result;
+  } 
+  @Get('employees')
+  async getemployees(
+    @Req() req: AuthenticatedRequest,
+    @Query() data: getEmployeesDto
+  ){
+    
+    const {id, role} = req.user!
+    return this.usersService.getEmployees(data,id,role)
   }
 }

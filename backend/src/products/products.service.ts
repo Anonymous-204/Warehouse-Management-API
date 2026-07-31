@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Role, TransactionType } from '@prisma/client';
+import { AdjustInventoryDto, IOInventoryDto } from './products.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -39,13 +40,12 @@ export class ProductsService {
    * Nhập / Xuất sản phẩm + Ghi lịch sử giao dịch (StockTransaction)
    */
   
-  async IOInventory(dto, userId:number){
-    const {warehouseId, productId, quantity, note } = dto
-    // Sử dụng Interactive Transaction để đảm bảo tính toàn vẹn dữ liệu (Atomic)
+  async IOInventory(data:IOInventoryDto, userId:number){
+    const {warehouseId, productId, quantity, note } = data
     return this.prisma.$transaction(async (tx) => {
       // 1. Kiểm tra sản phẩm có trong kho không
-      const existingInventory = await tx.inventory.findFirst({
-        where: { warehouseId, productId,  },
+      const existingInventory = await tx.inventory.findUnique({
+        where:{warehouseId_productId:{warehouseId, productId}}
       });
 
       if (!existingInventory) {
@@ -89,7 +89,8 @@ export class ProductsService {
       return updatedInventory;
     });
   }
-  async adjustInventory(warehouseId:number,productId:number, quantityUpdate:number, userId:number, note?:string) {
+  async adjustInventory( data:AdjustInventoryDto,userId:number ) {
+    const {warehouseId,productId, quantity, note}=data
     return this.prisma.$transaction(async (tx)=>{
       const existingInventory = await tx.inventory.findFirst({
         where: {warehouseId, productId}
@@ -97,16 +98,16 @@ export class ProductsService {
       if(!existingInventory) {
         throw new NotFoundException("không thấy sản phẩm trong kho")
       }
-      if(quantityUpdate<0){
+      if(quantity<0){
         throw new BadRequestException("vui lòng không nhập số âm")
       }
-      const stockvariance = quantityUpdate - existingInventory.quantity
-      const adjustInventory = await tx.inventory.update({
+      const stockvariance = quantity - existingInventory.quantity
+      const updatedInventory = await tx.inventory.update({
         where: {
           id: existingInventory.id
         },
         data: {
-          quantity: quantityUpdate
+          quantity
         }
       })
       await tx.stockTransaction.create({
@@ -114,26 +115,20 @@ export class ProductsService {
           userId,
           productId,
           warehouseId,
-          quantity: quantityUpdate, // Lưu số lượng tuyệt đối trong bản ghi giao dịch
+          quantity: quantity, // Lưu số lượng tuyệt đối trong bản ghi giao dịch
           stockVariance: stockvariance,
           type: "ADJUST",
           note: note || "điều chỉnh tồn kho",
         },
       });
-      return adjustInventory
+      return updatedInventory
     })
   }
   /**
    * Điều chuyển sản phẩm từ Kho Nguồn -> Kho Đích + Ghi lịch sử (TRANSFER)
    */
-  async transferInventory(
-  fromWarehouseId: number,
-  toWarehouseId: number,
-  productId: number,
-  quantity: number,
-  userId: number,
-  note?: string,
-) {
+  async transferInventory(data,userId: number){
+  const {fromWarehouseId,toWarehouseId, productId, quantity, note}=data
   // 1. Kiểm tra cơ bản
   if (fromWarehouseId === toWarehouseId) {
     throw new BadRequestException('Kho nguồn và kho đích không được trùng nhau!');

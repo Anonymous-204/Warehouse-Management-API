@@ -55,23 +55,34 @@ export class IOInventoryDto {
   @IsNotEmpty()
   quantity!: number; // Có thể nhận âm (-) hoặc dương (+) từ Frontend
 
-  @IsString()
+  @IsString({message:"vui lòng nhập chuỗi ký tự cho ghi chú"})
   @IsOptional()
   note?: string; 
 }
 // Điều chỉnh kho(MANAGER)
 export class AdjustInventoryDto {
+  @IsInt()
+  @IsNotEmpty()
+  warehouseId!: number
+
+  @IsInt()
+  @IsNotEmpty()
+  productId!: number
 
   @IsInt()
   @IsNotEmpty()
   @Min(0,{message:"Số lượng tồn kho không âm"})
-  quantityUpdate!: number; // chỉ có thể dương (+) từ Frontend
+  quantity!: number; // chỉ có thể dương (+) từ Frontend
 
-  @IsString()
+  @IsString({message:"vui lòng nhập chuỗi ký tự cho ghi chú"})
   @IsOptional()
   note?: string; 
 }
 export class TransferInventoryDto {
+  @IsInt()
+  @IsNotEmpty()
+  fromWarehouseId!: number;
+
   @IsInt()
   @IsNotEmpty()
   toWarehouseId!: number;
@@ -84,7 +95,7 @@ export class TransferInventoryDto {
   @Min(1, { message: 'Số lượng điều chuyển phải lớn hơn 0' })
   quantity!: number;
 
-  @IsString()
+  @IsString({message:"vui lòng nhập chuỗi ký tự cho ghi chú"})
   @IsOptional()
   note?: string;
 }

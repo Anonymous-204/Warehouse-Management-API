@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Put,
-  Post,
   Req,
   Param,
   Query,
@@ -36,49 +35,27 @@ export class ProductsController {
   @Put('inventory/io')
   @UseGuards(WarehouseAccessGuard)
   async IOInventory(
-    @Body() dto: IOInventoryDto,
+    @Body() data: IOInventoryDto,
     @Req() req: AuthenticatedRequest,
-  ) {
-    return this.productsService.IOInventory(dto,req.user!.id);
-  }
+  ) {return this.productsService.IOInventory(data,req.user!.id);}
 
   // 3. Điều chỉnh tồn kho
-  @Put('warehouse/:warehouseId/product/:productId/inventory/adjust')
+  @Put('inventory/adjust')
   @Roles('ADMIN', 'MANAGER')
   @UseGuards(RolesGuard, WarehouseAccessGuard)
   async adjustInventory(
-    @Param('warehouseId', ParseIntPipe) warehouseId: number,
-    @Param('productId', ParseIntPipe) productId: number,
-    @Body() dto: AdjustInventoryDto,
+    @Body() data: AdjustInventoryDto,
     @Req() req: AuthenticatedRequest,
-  ) {
-    return this.productsService.adjustInventory(
-      warehouseId,
-      productId,
-      dto.quantityUpdate,
-      req.user!.id,
-      dto.note,
-    );
-  }
+  ) {return this.productsService.adjustInventory(data,req.user!.id,);}
 
   // 4. Điều chuyển sản phẩm
-  @Post('warehouse/:fromWarehouseId/transfer')
+  @Put('inventory/transfer')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   async transferInventory(
-    @Param('fromWarehouseId', ParseIntPipe) fromWarehouseId: number,
     @Body() dto: TransferInventoryDto,
     @Req() req: AuthenticatedRequest,
-  ) {
-    return this.productsService.transferInventory(
-      fromWarehouseId,
-      dto.toWarehouseId,
-      dto.productId,
-      dto.quantity,
-      req.user!.id,
-      dto.note,
-    );
-  }
+  ) {return this.productsService.transferInventory(dto,req.user!.id);}
 
   // 5. Lấy lịch sử Nhập / Xuất kho của user (ĐÃ BỎ WarehouseAccessGuard)
   @Get('history/me/io')

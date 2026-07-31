@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
-// Kiểu dữ liệu nhận từ State điều hướng (Router State)
+// Kiểu dữ liệu nhận từ Router State
 interface LocationState {
   warehouseId?: number;
   item?: {
@@ -22,19 +22,18 @@ export default function AdjustPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Lấy thông tin sản phẩm và kho từ React Router State
-  const state = location.state as LocationState;
+  // Lấy thông tin từ State
+  const state = location.state as LocationState | null;
   const item = state?.item;
   const warehouseId = state?.warehouseId;
 
-  // Form states
-  // Mặc định khởi tạo số lượng thực tế bằng đúng số lượng trên hệ thống
+  // Form states - Khởi tạo từ giá trị item an toàn
   const [actualQuantity, setActualQuantity] = useState<number>(item?.quantity ?? 0);
   const [note, setNote] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Kiểm tra nếu truy cập trực tiếp không qua HomePage
+  // 1. Kiểm tra điều kiện đầu vào nếu truy cập trực tiếp
   if (!item || !warehouseId || !item.product?.id) {
     return (
       <div style={{ maxWidth: '600px', margin: '50px auto', padding: '20px', textAlign: 'center' }}>
@@ -42,7 +41,14 @@ export default function AdjustPage() {
         <p>Vui lòng quay lại Trang chủ và chọn sản phẩm cần điều chỉnh.</p>
         <button
           onClick={() => navigate('/')}
-          style={{ padding: '8px 16px', backgroundColor: '#0d6efd', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#0d6efd',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
         >
           ⬅️ Quay về Trang chủ
         </button>
@@ -50,11 +56,11 @@ export default function AdjustPage() {
     );
   }
 
-  // Tính chênh lệch kho thực tế vs hệ thống (stockVariance)
+  // Tính chênh lệch (Variance)
   const systemQuantity = item.quantity;
   const variance = actualQuantity - systemQuantity;
 
-  // Xử lý gửi Form điều chỉnh
+  // 2. Xử lý gửi Form điều chỉnh
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -67,10 +73,12 @@ export default function AdjustPage() {
     setMessage(null);
 
     try {
-      // Gọi API Điều chỉnh tồn kho: PUT /products/warehouse/:warehouseId/product/:productId/inventory/adjust
-      await api.put(`/products/warehouse/${warehouseId}/product/${item.product.id}/inventory/adjust`, {
-        quantityUpdate: Number(actualQuantity),
-        note: note || 'Điều chỉnh kiểm kê tồn kho',
+      // ✅ SỬA LỖI API: Truyền đầy đủ warehouseId, productId, quantity (mới) và note
+      await api.put(`/products/inventory/adjust`, {
+        warehouseId: Number(warehouseId),
+        productId: Number(item.product.id),
+        quantity: Number(actualQuantity),
+        note: note.trim() || 'Điều chỉnh kiểm kê tồn kho',
       });
 
       setMessage({
@@ -78,14 +86,14 @@ export default function AdjustPage() {
         text: `Đã cập nhật tồn kho mới thành công: ${actualQuantity} sản phẩm!`,
       });
 
-      // Tự động chuyển về trang chủ sau 1.5 giây
+      // Chuyển hướng sau khi thành công
       setTimeout(() => {
         navigate('/');
       }, 1500);
     } catch (err: any) {
-      console.error(err);
+      console.error('Adjust inventory error:', err);
       const errDetail = err.response?.data?.message || 'Có lỗi xảy ra khi điều chỉnh tồn kho!';
-      setMessage({ type: 'error', text: errDetail });
+      setMessage({ type: 'error', text: Array.isArray(errDetail) ? errDetail.join(', ') : errDetail });
     } finally {
       setSubmitting(false);
     }
@@ -119,7 +127,7 @@ export default function AdjustPage() {
         </div>
       </div>
 
-      {/* Display Thông báo */}
+      {/* Thông báo */}
       {message && (
         <div
           style={{
@@ -137,7 +145,6 @@ export default function AdjustPage() {
 
       {/* Form nhập liệu */}
       <form onSubmit={handleSubmit} style={{ border: '1px solid #dee2e6', padding: '20px', borderRadius: '8px', backgroundColor: '#fff' }}>
-        {/* Số lượng thực tế */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>
             Số lượng thực tế đếm được (Số lượng mới):
@@ -146,13 +153,13 @@ export default function AdjustPage() {
             type="number"
             min="0"
             value={actualQuantity}
-            onChange={(e) => setActualQuantity(parseInt(e.target.value) || 0)}
+            onChange={(e) => setActualQuantity(parseInt(e.target.value, 10) || 0)}
             required
             style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ced4da', fontSize: '16px', fontWeight: 'bold', boxSizing: 'border-box' }}
           />
         </div>
 
-        {/* Khối hiển thị biến động chênh lệch (Variance) */}
+        {/* Khối chênh lệch (Variance) */}
         <div
           style={{
             padding: '12px 15px',
@@ -172,7 +179,7 @@ export default function AdjustPage() {
           {variance < 0 && '(Hao hụt/Mất mát - Hệ thống sẽ tự trừ đi)'}
         </div>
 
-        {/* Ghi chú lý do điều chỉnh */}
+        {/* Ghi chú */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>Lý do điều chỉnh / Kiểm kê:</label>
           <textarea
@@ -184,7 +191,6 @@ export default function AdjustPage() {
           />
         </div>
 
-        {/* Nút Submit */}
         <button
           type="submit"
           disabled={submitting}
