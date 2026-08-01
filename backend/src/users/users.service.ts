@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, Req } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto } from 'src/auth/auth.dto';
 import {getEmployeesDto} from './users.dto'
-import { AuthenticatedRequest } from 'src/auth/auth.middleware';
+import { AuthenticatedRequest } from 'src/guard/auth.middleware';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 @Injectable()
@@ -12,6 +12,11 @@ export class UsersService {
     async findUserByEmail(email: RegisterDto['email']) {
         return this.prisma.user.findUnique({
             where: { email },
+        });
+    }
+    async findUserById(id:number) {
+        return this.prisma.user.findUnique({
+            where: { id },
         });
     }
     async createUser(data: RegisterDto) {
@@ -52,8 +57,9 @@ export class UsersService {
         if (!isPasswordValid) {
             throw new UnauthorizedException('email or password is incorrect');
         }
-        
-        return existingUser;
+        const {hashedPassword, ...user} = existingUser;
+        return user;
+    
     }
     // update refresh token for user
     async createSession(userId: number, refreshToken: string, expiredAt: Date) {
@@ -85,6 +91,19 @@ export class UsersService {
             },
         });
         return listEmployees
+    }
+    async findActiveSessions (){
+        return this.prisma.session.findMany({
+            select:{
+                refreshToken:true,
+                userId:true
+            },
+            where:{
+                expiredAt:{
+                    gt: new Date()
+                }
+            }
+        })
     }
 }
 

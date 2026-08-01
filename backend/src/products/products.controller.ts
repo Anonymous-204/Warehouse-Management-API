@@ -15,7 +15,7 @@ import { AdjustInventoryDto, IOInventoryDto, TransferInventoryDto } from './prod
 import { Role, TransactionType } from '@prisma/client';
 import { RolesGuard } from 'src/guard/roles.guard';
 import { Roles } from 'src/guard/roles.decorator';
-import type { AuthenticatedRequest } from 'src/auth/auth.middleware';
+import type { AuthenticatedRequest } from 'src/guard/auth.middleware';
 
 @Controller('products')
 export class ProductsController {

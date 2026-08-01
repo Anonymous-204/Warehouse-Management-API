@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { AuthenticatedRequest } from '../auth/auth.middleware';
+import { AuthenticatedRequest } from './auth.middleware';
 
 @Injectable()
 export class WarehouseAccessGuard implements CanActivate {

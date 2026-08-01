@@ -1,5 +1,5 @@
 import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
-import { AuthMiddleware } from './auth/auth.middleware'; // Import AuthMiddleware
+import { AuthMiddleware } from './guard/auth.middleware'; // Import AuthMiddleware
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma/prisma.service';
@@ -8,9 +8,9 @@ import { ProductsModule } from './products/products.module';
 import { UsersService } from './users/users.service';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
-
+import { ConfigModule } from '@nestjs/config'
 @Module({
-  imports: [AuthModule, UsersModule, PrismaModule, ProductsModule],
+  imports: [ConfigModule.forRoot({isGlobal:true}),AuthModule, UsersModule, PrismaModule, ProductsModule],
   controllers: [AppController],
   providers: [AppService, PrismaService, UsersService],
 })

@@ -1,8 +1,9 @@
 // auth.controller.ts
-import { Controller, Post, Body, Res, HttpCode, HttpStatus } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Post, Body, Res, Req, HttpCode, HttpStatus } from '@nestjs/common';
+import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './auth.dto';
+import { request } from 'https';
 
 @Controller('auth')
 export class AuthController {
@@ -21,15 +22,9 @@ export class AuthController {
   ) {
     const { accessToken, refreshToken, user } = await this.authService.loginUser(loginDto);
 
-    // 1. Set Access Token Cookie (Sống 1 giờ)
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true, // Bảo mật chống XSS
-      secure: process.env.NODE_ENV === 'production', // Dùng HTTPS khi production
-      sameSite: 'lax', // Hoặc 'strict' tùy theo cấu hình Frontend/Backend khác origin hay không
-      maxAge: 60 * 60 * 1000, // 1 giờ (milliseconds)
-    });
+    
 
-    // 2. Set Refresh Token Cookie (Sống 7 ngày)
+    // Set Refresh Token Cookie (Sống 7 ngày)
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -40,11 +35,13 @@ export class AuthController {
     // Trả về thông tin cơ bản của user (không bao gồm token nữa vì đã nằm trong cookie)
     return {
       message: 'Login successful',
+      accessToken,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
+        warehouseId: user.warehouseId,
       },
     };
   }
@@ -52,9 +49,19 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: true }) res: Response) {
-    // Clear cả 2 cookies khi logout
-    res.clearCookie('accessToken');
+    // Clear cookies khi logout
     res.clearCookie('refreshToken');
-    return { message: 'Logged out successfully' };
+    return { message: 'Đăng xuất thành công' };
   }
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @Req() req:Request,
+    @Res({passthrough:true}) res: Response
+  ){
+    const refreshToken = req.cookies?.['refreshToken']
+    const result = await this.authService.refreshToken(refreshToken)
+    return { accessToken: result.accessToken };
+  }
+
 }

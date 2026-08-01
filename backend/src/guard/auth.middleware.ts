@@ -1,5 +1,6 @@
 // src/auth/auth.middleware.ts
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Role } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
@@ -16,6 +17,7 @@ export interface AuthenticatedRequest extends Request {
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
+  constructor(private readonly configService: ConfigService) {}
   use(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     // 1. Lấy chuỗi từ Header Authorization
     const authHeader = req.headers.authorization;
@@ -31,10 +33,13 @@ export class AuthMiddleware implements NestMiddleware {
     if (!token) {
       throw new UnauthorizedException('Token không hợp lệ!');
     }
-
+    const secretKey = this.configService.get<string>('JWT_SECRET');
+    if (!secretKey) {
+      throw new InternalServerErrorException('Chưa cấu hình JWT_SECRET trong file .env!');
+    }
     try {
       // 4. Verify token bằng JWT Secret
-      const secretKey = process.env.JWT_SECRET || 'your_default_jwt_secret';
+      
       const decoded = jwt.verify(token, secretKey) as AuthenticatedRequest['user'];
 
       // 5. Gán thông tin user giải mã được vào req.user
