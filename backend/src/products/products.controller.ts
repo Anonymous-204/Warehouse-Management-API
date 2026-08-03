@@ -103,4 +103,10 @@ export class ProductsController {
       limit,
     });
   }
+
+  // 8. Lấy thống kê Dashboard
+  @Get('dashboard/stats')
+  async getDashboardStats() {
+    return await this.productsService.getDashboardStats();
+  }
 }

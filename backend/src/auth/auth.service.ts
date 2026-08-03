@@ -5,9 +5,8 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { LoginDto, RegisterDto } from './auth.dto';
-import { NotFoundError } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
-
+import sha256 from 'crypto-js/sha256';
 @Injectable()
 export class AuthService {
   constructor(
@@ -23,7 +22,7 @@ export class AuthService {
     return secret;
   }
   generateRandomToken(): string {
-    return crypto.randomBytes(64).toString('hex'); // Chuỗi 128 ký tự
+    return crypto.randomBytes(64).toString('hex'); 
   }
 
   async registerUser(data: RegisterDto) {
@@ -60,7 +59,7 @@ export class AuthService {
     });
 
     const refreshToken = this.generateRandomToken();
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    const hashedRefreshToken = sha256(refreshToken).toString();
 
     // Hạn dùng Session DB: 7 ngày
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -76,8 +75,9 @@ export class AuthService {
     const activeSessions = await this.usersService.findActiveSessions();
     let matchedSession:any = null
     for (const session of activeSessions) {
-      const valid = await bcrypt.compare(refreshToken, session.refreshToken)
-      if (valid) {matchedSession = session
+      const valid = await sha256(refreshToken).toString() === session.refreshToken
+      if (valid) {
+        matchedSession = session
       break;}
     }
     if (!matchedSession) 

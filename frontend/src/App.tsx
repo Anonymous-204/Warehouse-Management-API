@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage/LoginPage';
 import './App.css';
 import { ProtectedRoute, AuthProvider } from './Auth';
 import HomePage from './pages/HomePage/HomePage';
+import MainLayout from './layouts/MainLayout';
 
 export default function App() {
   return (
@@ -13,7 +14,9 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           
           {/* Đường dẫn / -> Trang chủ */}
-          <Route path="/" element={<ProtectedRoute><HomePage/></ProtectedRoute>} />
+          <Route  element={<ProtectedRoute><MainLayout/></ProtectedRoute>} >
+            <Route path="/" element={<HomePage/>} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

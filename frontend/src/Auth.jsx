@@ -76,10 +76,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    window.location.href = '/login'; // Chuyển hướng về trang login
     tokenRAM = null;
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
     api.post('/auth/logout').catch(() => {});
+    
   };
 
   return (

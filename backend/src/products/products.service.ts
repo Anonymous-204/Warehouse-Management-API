@@ -414,4 +414,123 @@ async getMyTransferHistory(
     },
   };
 }
+  async getDashboardStats() {
+  // 1. Mốc thời gian bắt đầu và kết thúc ngày hôm nay
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // 2. Chạy Promise.all song song các query
+  const [
+    totalProducts,
+    totalInventory,
+    activeInventoryGrouped,
+    lowStockGrouped,
+    totalWarehouses,
+    totalEmployees,
+    todayTransactions,
+  ] = await Promise.all([
+    // 1. Tổng số sản phẩm
+    this.prisma.product.count(),
+
+    // 2. Tổng số lượng tồn kho
+    this.prisma.inventory.aggregate({
+      _sum: { quantity: true },
+    }),
+
+    // 3. Lấy danh sách productId có tồn kho > 0 (Dùng tính outOfStock)
+    this.prisma.inventory.groupBy({
+      by: ['productId'],
+      _sum: { quantity: true },
+      having: {
+        quantity: { _sum: { gt: 0 } },
+      },
+    }),
+
+    // 4. Sản phẩm có tổng tồn kho > 0 VÀ < 10 (Sắp hết hàng)
+    this.prisma.inventory.groupBy({
+      by: ['productId'],
+      _sum: { quantity: true },
+      having: {
+        quantity: {
+          _sum: {
+            gt: 0,
+            lt: 10,
+          },
+        },
+      },
+    }),
+
+    // 5. Tổng số kho
+    this.prisma.warehouse.count(),
+
+    // 6. Tổng số nhân viên
+    this.prisma.user.count(),
+
+    // 7. Lấy TẤT CẢ giao dịch hôm nay + INCLUDE thông tin Product (chú ý dùng include)
+    this.prisma.stockTransaction.findMany({
+      where: {
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: {
+        product: {
+          select: {
+            price: true, // Lấy duy nhất cột price từ bảng Product
+          },
+        },
+      },
+    }),
+  ]);
+
+  // --- XỬ LÝ DỮ LIỆU ---
+
+  let todayImport = 0;
+  let todayExport = 0;
+  let todayAdjust = 0;
+  let todayTransfer = 0;
+  let todayImportValue = 0;
+  let todayExportValue = 0;
+
+  todayTransactions.forEach((tx) => {
+    // Ép kiểu Decimal từ Prisma sang Number để nhân toán học
+    const unitPrice = tx.product?.price ? Number(tx.product.price) : 0;
+    const itemValue = tx.quantity * unitPrice;
+
+    if (tx.type === 'IN') {
+      todayImport += tx.quantity;
+      todayImportValue += itemValue;
+    } else if (tx.type === 'OUT') {
+      todayExport += tx.quantity;
+      todayExportValue += itemValue;
+    } else if (tx.type === 'ADJUST') {
+      todayAdjust += tx.quantity;
+    } else if (tx.type === 'TRANSFER') {
+      todayTransfer += tx.quantity;
+    }
+  });
+
+  // Số lượng sản phẩm HẾT HÀNG = Tổng SP - Số SP đang có tồn kho > 0
+  const activeProductCount = activeInventoryGrouped.length;
+  const outOfStockCount = Math.max(0, totalProducts - activeProductCount);
+
+  return {
+    totalProducts,
+    totalInventory: totalInventory._sum.quantity || 0,
+    lowStock: lowStockGrouped.length,
+    outOfStock: outOfStockCount,
+    totalWarehouses,
+    totalEmployees,
+    todayImport,
+    todayExport,
+    todayAdjust,
+    todayTransfer,
+    todayImportValue,
+    todayExportValue,
+  };
+}
 }
