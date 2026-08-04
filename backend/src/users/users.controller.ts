@@ -14,14 +14,14 @@ export class UsersController {
   async getProfile(@Req() req: Request) { // 👈 Đổi type thành Request để NestJS biên dịch Decorator ngon lành
     // Cast kiểu dữ liệu thủ công
     const authReq = req as AuthenticatedRequest; 
-    const email = authReq.user?.email;
+    const userId = authReq.user?.id;
 
     // 👈 Fix lỗi TS2345: Kiểm tra nếu không có email thì ném lỗi luôn
-    if (!email) {
+    if (!userId) {
       throw new UnauthorizedException('Không tìm thấy thông tin người dùng!');
     }
 
-    const user = await this.usersService.findUserByEmail(email);
+    const user = await this.usersService.findUserById(userId);
     if (!user) {
       throw new NotFoundException('Người dùng không tồn tại trong hệ thống!');
     }

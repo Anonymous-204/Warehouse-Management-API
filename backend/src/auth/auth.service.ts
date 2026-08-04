@@ -47,10 +47,7 @@ export class AuthService {
     const user = await this.usersService.validateUser(data);
     const payload = {
       id: user.id,
-      name: user.name,
-      email: user.email,
       role: user.role,
-      warehouseId: user.warehouseId,
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -88,10 +85,7 @@ export class AuthService {
     }
     const payload = {
       id: user.id,
-      email: user.email,
       role: user.role,
-      name: user.name,
-      warehouseId: user.warehouseId,
     };
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.getJwtSecret(),
