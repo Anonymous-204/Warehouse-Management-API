@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth, api } from '../../Auth'; // 🟢 Import đúng ngoặc nhọn { api }
+import { useAuth, api } from '../Auth'; // 🟢 Import đúng ngoặc nhọn { api }
 
 const HomePage = () => {
   const { user } = useAuth();

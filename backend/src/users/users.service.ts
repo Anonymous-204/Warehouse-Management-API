@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException, Req } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto } from 'src/auth/auth.dto';
-import {getEmployeesDto} from './users.dto'
 import { AuthenticatedRequest } from 'src/guard/auth.middleware';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
@@ -71,12 +70,12 @@ export class UsersService {
             },
         });
     }
-    async getEmployees(data:getEmployeesDto, id:number,role:Role) {
-        const {warehouseid} = data
+    async getEmployees( id:number,role:Role, warehouseId:number) {
         const listEmployees = await this.prisma.user.findMany({
             where: {
-                warehouseId: role==='ADMIN'?undefined:warehouseid,
-                id: {not:id}
+                warehouseId: role==='ADMIN'?undefined:warehouseId,
+                id: {not:id},
+                role: {in:['STAFF','MANAGER']}
             },
             select:{
                 id:true,

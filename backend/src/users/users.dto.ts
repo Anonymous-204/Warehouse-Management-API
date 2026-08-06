@@ -1,4 +1,5 @@
-import { IsEmail, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsString,  } from 'class-validator';
+import { Type } from 'class-transformer';
 import { Role } from '@prisma/client';
 export class UserDto {
     @IsNotEmpty()
@@ -12,12 +13,4 @@ export class UserDto {
     @IsNotEmpty()
     @IsString()
     password!: string;
-}
-
-export class getEmployeesDto {
-    @IsNotEmpty()
-    @IsInt()
-    warehouseid!:number
-
-    
 }

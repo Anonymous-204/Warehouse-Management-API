@@ -30,7 +30,6 @@ export class WarehouseAccessGuard implements CanActivate {
       }
       return true;
     }
-
     throw new ForbiddenException('Role của bạn không hợp lệ!');
   }
 }

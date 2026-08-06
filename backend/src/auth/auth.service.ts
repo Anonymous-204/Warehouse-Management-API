@@ -48,6 +48,7 @@ export class AuthService {
     const payload = {
       id: user.id,
       role: user.role,
+      warehouseId: user.warehouseId,
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -86,6 +87,7 @@ export class AuthService {
     const payload = {
       id: user.id,
       role: user.role,
+      warehouseId: user.warehouseId,
     };
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.getJwtSecret(),

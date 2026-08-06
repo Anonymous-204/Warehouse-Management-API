@@ -8,10 +8,8 @@ import * as jwt from 'jsonwebtoken';
 export interface AuthenticatedRequest extends Request {
   user: {
     id: number;
-    email: string;
     role: Role;
-    name: string;
-    warehouseId?: number | null;
+    warehouseId: number;
   };
 }
 

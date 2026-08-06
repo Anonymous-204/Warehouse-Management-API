@@ -3,7 +3,6 @@ import { Controller, Get, Req,Query, NotFoundException, UnauthorizedException } 
 import type { Request } from 'express'; // 👈 Fix lỗi TS1272 (dùng Request từ express)
 import type { AuthenticatedRequest } from '../guard/auth.middleware'; // 👈 Dùng 'import type' cho interface
 import { UsersService } from './users.service';
-import { getEmployeesDto } from './users.dto';
 
 
 @Controller('users')
@@ -33,10 +32,9 @@ export class UsersController {
   @Get('employees')
   async getemployees(
     @Req() req: AuthenticatedRequest,
-    @Query() data: getEmployeesDto
-  ){
+  ){ 
     
-    const {id, role} = req.user!
-    return this.usersService.getEmployees(data,id,role)
+    const {id, role, warehouseId} = req.user!
+    return this.usersService.getEmployees(id, role, warehouseId)
   }
 }

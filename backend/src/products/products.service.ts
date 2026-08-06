@@ -9,7 +9,7 @@ export class ProductsService {
 
   // Lấy danh sách sản phẩm theo warehouseId
   async getProductsByWarehouse(warehouseId: number, role:Role) {
-    return this.prisma.inventory.findMany({
+    const inventory = await this.prisma.inventory.findMany({
       where: {
         warehouseId: role==='ADMIN'?undefined:warehouseId
       },orderBy:{updatedAt: 'desc'},
@@ -21,12 +21,12 @@ export class ProductsService {
             name: true,
           },
         },
+        warehouse:{ select:{name:true} },
         product: {
           select: {
             id: true,
             sku: true,
             name: true,
-            description: true,
             price: true,
             category: { select: { name: true } },
             brand: { select: { name: true } },
@@ -34,6 +34,19 @@ export class ProductsService {
         },
       },
     });
+    const formattedInventory = inventory.map((item) => ({
+      Id: item.product.id,
+      sku: item.product.sku,
+      name: item.product.name,
+      price: item.product.price,
+      category: item.product.category.name,
+      brand: item.product.brand.name,
+      quantity: item.quantity,
+      costPrice: item.costPrice,
+      supplier: item.supplier.name,
+      warehouse: item.warehouse.name
+    }));
+    return formattedInventory;
   }
 
   /**

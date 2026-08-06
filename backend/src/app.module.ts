@@ -7,10 +7,12 @@ import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
 import { UsersService } from './users/users.service';
 import { UsersModule } from './users/users.module';
+import { WarehouseModule } from './warehouse/warehouse.module';
+import { SupplierModule } from './Supplier/supplier.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config'
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal:true}),AuthModule, UsersModule, PrismaModule, ProductsModule],
+  imports: [ConfigModule.forRoot({isGlobal:true}),AuthModule, UsersModule, PrismaModule, ProductsModule, WarehouseModule, SupplierModule],
   controllers: [AppController],
   providers: [AppService, PrismaService, UsersService],
 })
@@ -23,6 +25,6 @@ export class AppModule implements NestModule {
         { path: 'auth/login', method: RequestMethod.POST },
         { path: 'auth/register', method: RequestMethod.POST },
       )
-      .forRoutes('products', 'users'); // Hoặc cho phép ngoại trừ auth rồi dùng .forRoutes('*')
-  }
+      .forRoutes('products', 'users', 'warehouses'); // Hoặc cho phép ngoại trừ auth rồi dùng .forRoutes('*')
+  } 
 }
