@@ -17,7 +17,7 @@ const HomePage = () => {
       try {
         setLoading(true);
         // Gọi thẳng bằng api đã set Interceptor trong Auth.jsx
-        const res = await api.get('/products/dashboard/stats');
+        const res = await api.get('/inventory/dashboard/stats');
         if (isMounted) {
           setStats(res.data);
         }

@@ -1,17 +1,16 @@
-import {React, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth, api } from '../Auth';
 
-const ProductPage = () => {
+const InventoryPage = () => {
   const { user } = useAuth();
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchProduct = async () => {
-      // Bọc an toàn: Kiểm tra nếu chưa có thông tin kho thì ngưng gọi API
       if (user?.role !== 'ADMIN' && !user?.warehouseId) {
         if (isMounted) {
           setLoading(false);
@@ -23,8 +22,7 @@ const ProductPage = () => {
       try {
         setLoading(true);
         setError(null);
-        // 🟢 Sửa URL có dấu / ở đầu
-        const res = await api.get(`/products/warehouse/${user.warehouseId}`);
+        const res = await api.get(`/inventory/warehouse/${user.warehouseId}`);
         if (isMounted) {
           setProducts(res.data || []);
         }
@@ -45,14 +43,14 @@ const ProductPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [user?.warehouseId]); // 🟢 Tự động load lại nếu user/warehouseId thay đổi
+  }, [user?.warehouseId, user?.role]);
 
   // Helper định dạng tiền VNĐ
   const formatVND = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
   };
 
-  // Helper hiển thị an toàn (tránh lỗi nếu Backend trả về Object relation)
+  // Helper hiển thị an toàn
   const renderValue = (val) => {
     if (!val) return '---';
     if (typeof val === 'object') return val.name || val.title || JSON.stringify(val);
@@ -68,8 +66,6 @@ const ProductPage = () => {
           <p style={styles.subtitle}>
             Quản lý tồn kho cho <strong>Kho #{user?.warehouseId || 'N/A'}</strong>
           </p>
-          {/* thêm nút thêm sản phẩm nếu là admin hoặc manager */}
-          {user.role==='ADMIN'||user.role==='MANAGER'&&<button>a</button>}
         </div>
       </div>
 
@@ -99,7 +95,7 @@ const ProductPage = () => {
                   {products.map((item) => {
                     const quantity = item.quantity ?? item.stock ?? 0;
                     return (
-                      <tr key={item.id} style={styles.tr}>
+                      <tr key={item.id || item.sku} style={styles.tr}>
                         <td style={{ ...styles.td, fontWeight: '600', color: '#2563EB' }}>
                           {item.sku || '---'}
                         </td>
@@ -133,7 +129,7 @@ const ProductPage = () => {
   );
 };
 
-// 💡 CẤU HÌNH STYLES (Modern Dashboard Table)
+// CẤU HÌNH STYLES
 const styles = {
   container: {
     padding: '24px',
@@ -144,7 +140,7 @@ const styles = {
   header: {
     marginBottom: '20px',
     display: 'flex',
-    justifyContent: 'space-between',
+    justify: 'space-between',
     alignItems: 'center',
   },
   title: {
@@ -199,7 +195,6 @@ const styles = {
   },
   tr: {
     borderBottom: '1px solid #F1F5F9',
-    transition: 'background-color 0.2s ease',
   },
   td: {
     padding: '14px 16px',
@@ -231,4 +226,4 @@ const styles = {
   },
 };
 
-export default ProductPage;
+export default InventoryPage;

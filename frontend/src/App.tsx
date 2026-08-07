@@ -4,10 +4,11 @@ import './App.css';
 import { ProtectedRoute, AuthProvider } from './Auth';
 import MainLayout from './layouts/MainLayout';
 import HomePage from './pages/HomePage';
-import ProductPage from './pages/ProductPage';
+import InventoryPage from './pages/InventoryPage';
 import WarehousePage from './pages/WarehousePage';
 import SupplierPage from './pages/SupplierPage';
 import EmployeePage from './pages/EmployeePage';
+import ProductsPage from './pages/ProductsPage';
 export default function App() {
   return (
     <AuthProvider>
@@ -19,10 +20,11 @@ export default function App() {
           {/* Đường dẫn / -> Trang chủ */}
           <Route  element={<ProtectedRoute><MainLayout/></ProtectedRoute>} >
             <Route path="/" element={<HomePage/>} />
-            <Route path="/products" element={<ProductPage/>} />
+            <Route path="/inventory" element={<InventoryPage/>} />
             <Route path="/warehouse" element={<WarehousePage/>} />
             <Route path="/suppliers" element={<SupplierPage/>} />
             <Route path="/employees" element={<EmployeePage/>} />
+            <Route path="/products" element={<ProductsPage/>} />
           </Route>
         </Routes>
       </BrowserRouter>

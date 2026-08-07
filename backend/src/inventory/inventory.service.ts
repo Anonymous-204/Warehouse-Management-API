@@ -1,11 +1,10 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Role, TransactionType } from '@prisma/client';
-import { CreateProductDto } from './products.dto';
+import { AdjustInventoryDto, CreateProductDto, IOInventoryDto } from './inventory.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
-export class ProductsService {
+export class InventoryService {
   constructor(private prisma: PrismaService) {}
 
   // Tạo sản phẩm mới
@@ -24,54 +23,243 @@ export class ProductsService {
   //1.2 tạo sản phẩm mới
   async createProduct(productData:CreateProductDto ) {
     const {sku, name, price, categoryId, brandId, description, image } = productData;
-    try{
-      return await this.prisma.product.create({
-        data: {
-          sku: sku || 'sku-123', 
-          name: name || 'Sản phẩm mới',
-          price: price || 0,
-          categoryId: categoryId || 0, 
-          brandId: brandId || 0,
-          description: description|| '',
-          image: image
-        }
-      });
-    }
-    catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
-        throw new ConflictException('SKU đã tồn tại');
+    const newProduct = await this.prisma.product.create({
+      data: {
+        sku: sku || 'sku-123', // Tạo SKU tạm thời dựa trên timestamp
+        name: name || 'Sản phẩm mới',
+        price: price || 0,
+        categoryId: categoryId || 0, // Cần thay đổi theo logic của bạn
+        brandId: brandId || 0,
+        description: description|| '',
+        image: image
       }
-
-      throw err;
-    }
+    });
+    return newProduct;
   }
   // Lấy danh sách sản phẩm theo warehouseId
-  async getAllProduct() {
-    const inventory = await this.prisma.product.findMany({
+  async getProductsByWarehouse(warehouseId: number, role:Role) {
+    const inventory = await this.prisma.inventory.findMany({
+      where: {
+        warehouseId: role==='ADMIN'?undefined:warehouseId
+      },orderBy:{updatedAt: 'desc'},
       select: {
-        id: true,
-        sku: true,
-        name: true,
-        price: true,
-        image:true,
-        category: { select: { name: true } },
-        brand: { select: { name: true } },
+        quantity: true,
+        costPrice: true,
+        supplier: {
+          select: {
+            name: true,
+          },
+        },
+        warehouse:{ select:{name:true} },
+        product: {
+          select: {
+            id: true,
+            sku: true,
+            name: true,
+            price: true,
+            category: { select: { name: true } },
+            brand: { select: { name: true } },
+          },
+        },
       },
-    }); 
+    });
     const formattedInventory = inventory.map((item) => ({
-      Id: item.id,
-      sku: item.sku,
-      name: item.name,
-      price: item.price,
-      image: item.image,
-      category: item.category.name,
-      brand: item.brand.name,
+      Id: item.product.id,
+      sku: item.product.sku,
+      name: item.product.name,
+      price: item.product.price,
+      category: item.product.category.name,
+      brand: item.product.brand.name,
+      quantity: item.quantity,
+      costPrice: item.costPrice,
+      supplier: item.supplier.name,
+      warehouse: item.warehouse.name
     }));
     return formattedInventory;
   }
+
+  /**
+   * Nhập / Xuất sản phẩm + Ghi lịch sử giao dịch (StockTransaction)
+   */
+  
+  async IOInventory(data:IOInventoryDto, userId:number){
+    const {warehouseId, productId, quantity, note } = data
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Kiểm tra sản phẩm có trong kho không
+      const existingInventory = await tx.inventory.findUnique({
+        where:{warehouseId_productId:{warehouseId, productId}}
+      });
+
+      if (!existingInventory) {
+        throw new NotFoundException('Không tìm thấy sản phẩm trong kho này!');
+      }
+
+      // 2. Chặn xuất quá số lượng hiện có (Tránh âm kho)
+      if (existingInventory.quantity + quantity < 0) {
+        throw new BadRequestException(
+          `Số lượng tồn kho không đủ! (Hiện có: ${existingInventory.quantity}, Cần xuất: ${Math.abs(quantity)})`,
+        );
+      }
+
+      // 3. Cập nhật số lượng tồn kho (Atomic increment)
+      const updatedInventory = await tx.inventory.update({
+        where: {
+          id: existingInventory.id,
+        },
+        data: {
+          quantity: {
+            increment: quantity,
+          },
+        },
+      });
+
+      // 4. Xác định loại giao dịch (IN hoặc OUT)
+      const transactionType: TransactionType = quantity > 0 ? 'IN' : 'OUT';
+
+      // 5. Tạo bản ghi lịch sử vào bảng stock_transactions
+      await tx.stockTransaction.create({
+        data: { 
+          userId: userId,
+          productId: productId,
+          warehouseId: warehouseId,
+          quantity: Math.abs(quantity), // Lưu số lượng tuyệt đối trong bản ghi giao dịch
+          type: transactionType,
+          note: note || (transactionType === 'IN' ? 'Nhập kho' : 'Xuất kho'),
+        },
+      });
+
+      return updatedInventory;
+    });
+  }
+  async adjustInventory( data:AdjustInventoryDto,userId:number ) {
+    const {warehouseId,productId, quantity, note}=data
+    return this.prisma.$transaction(async (tx)=>{
+      const existingInventory = await tx.inventory.findFirst({
+        where: {warehouseId, productId}
+      })
+      if(!existingInventory) {
+        throw new NotFoundException("không thấy sản phẩm trong kho")
+      }
+      if(quantity<0){
+        throw new BadRequestException("vui lòng không nhập số âm")
+      }
+      const stockvariance = quantity - existingInventory.quantity
+      const updatedInventory = await tx.inventory.update({
+        where: {
+          id: existingInventory.id
+        },
+        data: {
+          quantity
+        }
+      })
+      await tx.stockTransaction.create({
+        data: { 
+          userId,
+          productId,
+          warehouseId,
+          quantity: quantity, // Lưu số lượng tuyệt đối trong bản ghi giao dịch
+          stockVariance: stockvariance,
+          type: "ADJUST",
+          note: note || "điều chỉnh tồn kho",
+        },
+      });
+      return updatedInventory
+    })
+  }
+  /**
+   * Điều chuyển sản phẩm từ Kho Nguồn -> Kho Đích + Ghi lịch sử (TRANSFER)
+   */
+  async transferInventory(data,userId: number){
+  const {fromWarehouseId,toWarehouseId, productId, quantity, note}=data
+  // 1. Kiểm tra cơ bản
+  if (fromWarehouseId === toWarehouseId) {
+    throw new BadRequestException('Kho nguồn và kho đích không được trùng nhau!');
+  }
+
+  if (quantity <= 0) {
+    throw new BadRequestException('Số lượng điều chuyển phải lớn hơn 0!');
+  }
+
+  return this.prisma.$transaction(async (tx) => {
+    // 2. Kiểm tra kho nguồn và kho đích có tồn tại không
+    const [fromWarehouse, toWarehouse] = await Promise.all([
+      tx.warehouse.findUnique({ where: { id: fromWarehouseId } }),
+      tx.warehouse.findUnique({ where: { id: toWarehouseId } }),
+    ]);
+
+    if (!fromWarehouse) throw new NotFoundException('Không tìm thấy kho nguồn!');
+    if (!toWarehouse) throw new NotFoundException('Không tìm thấy kho đích!');
+
+    // 3. Tìm sản phẩm trong kho nguồn
+    const sourceInventory = await tx.inventory.findFirst({
+      where: { warehouseId: fromWarehouseId, productId },
+    });
+
+    if (!sourceInventory) {
+      throw new NotFoundException('Sản phẩm không có trong kho nguồn!');
+    }
+
+    if (sourceInventory.quantity < quantity) {
+      throw new BadRequestException(
+        `Số lượng tồn kho nguồn không đủ! (Hiện có: ${sourceInventory.quantity}, Cần chuyển: ${quantity})`,
+      );
+    }
+
+    // 4. Trừ số lượng ở kho nguồn
+    await tx.inventory.update({
+      where: { id: sourceInventory.id },
+      data: {
+        quantity: { decrement: quantity },
+      },
+    });
+
+    // 5. Kiểm tra kho đích đã có bản ghi tồn kho cho sản phẩm này chưa
+    const targetInventory = await tx.inventory.findFirst({
+      where: { warehouseId: toWarehouseId, productId },
+    });
+
+    if (targetInventory) {
+      // Nếu đã có -> Cộng thêm số lượng
+      await tx.inventory.update({
+        where: { id: targetInventory.id },
+        data: {
+          quantity: { increment: quantity },
+        },
+      });
+    } else {
+      // Nếu chưa có -> Tạo mới bản ghi tồn kho ở kho đích
+      await tx.inventory.create({
+        data: {
+          warehouseId: toWarehouseId,
+          productId,
+          supplierId: sourceInventory.supplierId,
+          quantity: quantity,
+          costPrice: sourceInventory.costPrice,
+        },
+      });
+    }
+
+    // 6. Tạo bản ghi giao dịch TRANSFER vào bảng stock_transactions
+    const transaction = await tx.stockTransaction.create({
+      data: {
+        userId,
+        productId,
+        warehouseId: fromWarehouseId,
+        toWarehouseId: toWarehouseId,
+        quantity,
+        type: 'TRANSFER',
+        note: note || `Điều chuyển từ ${fromWarehouse.name} sang ${toWarehouse.name}`,
+      },
+    });
+
+    // 🚀 Bổ sung tên 2 kho vào kết quả trả về
+    return {
+      ...transaction,
+      fromWarehouseName: fromWarehouse.name,
+      toWarehouseName: toWarehouse.name,
+    };
+  });
+}
   async getMyIOHistory(
     userId: number,
     options?: {

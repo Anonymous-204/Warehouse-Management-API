@@ -2,90 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, useAuth } from '../Auth';
 
-const styles = {
-  pageWrapper: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#f3f4f6',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    padding: '20px',
-  },
-  loginCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-    width: '100%',
-    maxWidth: '400px',
-    padding: '32px 24px',
-    boxSizing: 'border-box',
-  },
-  loginTitle: {
-    margin: '0 0 24px 0',
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-  },
-  alertMessage: {
-    padding: '12px 16px',
-    borderRadius: '8px',
-    marginBottom: '20px',
-    fontSize: '14px',
-    fontWeight: '500',
-    border: '1px solid',
-    textAlign: 'center',
-  },
-  alertError: {
-    backgroundColor: '#fde8e8',
-    color: '#9b1c1c',
-    borderColor: '#f8b4b4',
-  },
-  alertSuccess: {
-    backgroundColor: '#e1f9eb',
-    color: '#03543f',
-    borderColor: '#84e1bc',
-  },
-  loginForm: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  inputGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#374151',
-  },
-  input: {
-    padding: '10px 14px',
-    borderRadius: '6px',
-    border: '1px solid #d1d5db',
-    fontSize: '15px',
-    outline: 'none',
-  },
-  btnSubmit: {
-    padding: '12px',
-    borderRadius: '6px',
-    border: 'none',
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
-    fontSize: '16px',
-    fontWeight: '600',
-    marginTop: '8px',
-    cursor: 'pointer',
-  },
-  btnSubmitDisabled: {
-    opacity: 0.7,
-    cursor: 'not-allowed',
-  },
-};
-
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -190,5 +106,87 @@ const LoginPage = () => {
     </div>
   );
 };
-
+const styles = {
+  pageWrapper: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    backgroundColor: '#f3f4f6',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    padding: '20px',
+  },
+  loginCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+    width: '100%',
+    maxWidth: '400px',
+    padding: '32px 24px',
+    boxSizing: 'border-box',
+  },
+  loginTitle: {
+    margin: '0 0 24px 0',
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  alertMessage: {
+    padding: '12px 16px',
+    borderRadius: '8px',
+    marginBottom: '20px',
+    fontSize: '14px',
+    fontWeight: '500',
+    border: '1px solid',
+    textAlign: 'center',
+  },
+  alertError: {
+    backgroundColor: '#fde8e8',
+    color: '#9b1c1c',
+    borderColor: '#f8b4b4',
+  },
+  alertSuccess: {
+    backgroundColor: '#e1f9eb',
+    color: '#03543f',
+    borderColor: '#84e1bc',
+  },
+  loginForm: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  label: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#374151',
+  },
+  input: {
+    padding: '10px 14px',
+    borderRadius: '6px',
+    border: '1px solid #d1d5db',
+    fontSize: '15px',
+    outline: 'none',
+  },
+  btnSubmit: {
+    padding: '12px',
+    borderRadius: '6px',
+    border: 'none',
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    fontSize: '16px',
+    fontWeight: '600',
+    marginTop: '8px',
+    cursor: 'pointer',
+  },
+  btnSubmitDisabled: {
+    opacity: 0.7,
+    cursor: 'not-allowed',
+  },
+};
 export default LoginPage;

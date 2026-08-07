@@ -65,8 +65,13 @@ export default function MainLayout() {
                 </NavLink>
               </li>
               <li>
+                <NavLink to="/inventory" style={getNavLinkStyle}>
+                  🔢 Quản lý tồn kho
+                </NavLink>
+              </li>
+              <li>
                 <NavLink to="/products" style={getNavLinkStyle}>
-                  📦 Sản phẩm
+                  📦 Danh sách sản phẩm
                 </NavLink>
               </li>
               <li>
