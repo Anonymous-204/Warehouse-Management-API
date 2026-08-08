@@ -58,53 +58,6 @@ export class InventoryController {
 //     @Req() req: AuthenticatedRequest,
 //   ) {return this.productsService.transferInventory(dto,req.user!.id);}
 
-//   // 5. Lấy lịch sử Nhập / Xuất kho của user (ĐÃ BỎ WarehouseAccessGuard)
-//   @Get('history/me/io')
-//   async getMyIOHistory(
-//     @Req() req: AuthenticatedRequest,
-//     @Query('type') type?: TransactionType,
-//     @Query('page') page?: number,
-//     @Query('limit') limit?: number,
-//   ) {
-//     return await this.productsService.getMyIOHistory(req.user!.id, {
-//       type,
-//       page,
-//       limit,
-//     });
-//   }
-
-//   // 6. Lấy lịch sử Điều chỉnh (ADJUST) của user (ĐÃ BỎ WarehouseAccessGuard)
-//   @Get('history/me/adjust')
-//   @Roles('MANAGER', 'ADMIN')
-//   @UseGuards(RolesGuard)
-//   async getMyAdjustHistory(
-//     @Req() req: AuthenticatedRequest,
-//     @Query('type') type?: TransactionType,
-//     @Query('page') page?: number,
-//     @Query('limit') limit?: number,
-//   ) {
-//     return await this.productsService.getMyAdjustHistory(req.user!.id, {
-//       type,
-//       page,
-//       limit,
-//     });
-//   }
-
-//   // 7. Lấy lịch sử Điều chuyển (TRANSFER) của user
-//   @Get('history/me/transfer')
-//   @Roles('ADMIN')
-//   @UseGuards(RolesGuard)
-//   async getMyTransferHistory(
-//     @Req() req: AuthenticatedRequest,
-//     @Query('page') page?: number,
-//     @Query('limit') limit?: number,
-//   ) {
-//     return await this.productsService.getMyTransferHistory(req.user!.id, {
-//       page,
-//       limit,
-//     });
-//   }
-
   // 8. Lấy thống kê Dashboard
   @Get('dashboard/stats')
   async getDashboardStats() {

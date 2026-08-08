@@ -12,6 +12,7 @@ import { SupplierModule } from './Supplier/supplier.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config'
 import { InventoryModule } from './inventory/inventory.module';
+import { HistoryModule } from './history/history.module';
 @Module({
   imports: [ConfigModule.forRoot({isGlobal:true}),
     AuthModule, 
@@ -20,7 +21,8 @@ import { InventoryModule } from './inventory/inventory.module';
     ProductsModule, 
     WarehouseModule, 
     SupplierModule, 
-    InventoryModule],
+    InventoryModule,
+    HistoryModule],
   controllers: [AppController],
   providers: [AppService, PrismaService, UsersService],
 })
@@ -33,6 +35,6 @@ export class AppModule implements NestModule {
         { path: 'auth/login', method: RequestMethod.POST },
         { path: 'auth/register', method: RequestMethod.POST },
       )
-      .forRoutes('products', 'users', 'warehouses', 'inventory'); // Hoặc cho phép ngoại trừ auth rồi dùng .forRoutes('*')
+      .forRoutes('products', 'users', 'warehouses', 'inventory', 'history'); // Hoặc cho phép ngoại trừ auth rồi dùng .forRoutes('*')
   } 
 }

@@ -89,7 +89,7 @@ export default function MainLayout() {
                   📊 Giao dịch tồn kho
                 </NavLink>
               </li>
-              <li style = {styles.disabled}>
+              <li>
                 <NavLink to="/history" style={getNavLinkStyle}>
                   📜 Lịch sử giao dịch
                 </NavLink>

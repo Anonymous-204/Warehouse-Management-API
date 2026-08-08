@@ -9,6 +9,7 @@ import WarehousePage from './pages/WarehousePage';
 import SupplierPage from './pages/SupplierPage';
 import EmployeePage from './pages/EmployeePage';
 import ProductsPage from './pages/ProductsPage';
+import HistoryPage from './pages/HistoryPage';
 export default function App() {
   return (
     <AuthProvider>
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/suppliers" element={<SupplierPage/>} />
             <Route path="/employees" element={<EmployeePage/>} />
             <Route path="/products" element={<ProductsPage/>} />
+            <Route path="/history" element={<HistoryPage/>} />
           </Route>
         </Routes>
       </BrowserRouter>

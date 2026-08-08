@@ -29,11 +29,6 @@ export class ProductsController {
   async getAllProduct() {
     return this.productsService.getAllProduct();
   }
-  // 8. Lấy thống kê Dashboard
-  @Get('dashboard/stats')
-  async getDashboardStats() {
-    return await this.productsService.getDashboardStats();
-  }
   //9. lấy thông tin trước khi tạo sản phẩm
   @Roles('ADMIN','MANAGER')
   @UseGuards(RolesGuard)
